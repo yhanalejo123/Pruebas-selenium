@@ -1,5 +1,6 @@
-const { Builder, By, until } = require('selenium-webdriver');
+const { Builder, By, until, Capabilities } = require('selenium-webdriver');
 const { expect } = require('chai');
+const chrome = require('selenium-webdriver/chrome');
 
 const FRONTEND_URL = 'http://localhost:5173';
 
@@ -9,7 +10,21 @@ describe('Login e2e con Selenium', function () {
 	let driver;
 
 	before(async function () {
-		driver = await new Builder().forBrowser('MicrosoftEdge').build();
+		// Configurar opciones de Chrome
+		let options = new chrome.Options();
+		
+		// Si estamos en GitHub Actions (CI), usar headless mode
+		if (process.env.CI) {
+			options.addArguments('--headless');
+			options.addArguments('--no-sandbox');
+			options.addArguments('--disable-dev-shm-usage');
+		}
+		
+		driver = await new Builder()
+			.forBrowser('chrome')
+			.setChromeOptions(options)
+			.build();
+		
 		await driver.manage().setTimeouts({
 			implicit: 5000,
 			pageLoad: 15000,
