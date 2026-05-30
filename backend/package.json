@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "mocha *.test.js",
+    "test": "mocha",
+    "test:integration": "mocha \"test/integracion/*.test.js\"",
+    "test:e2e": "mocha \"test/e2e/*.e2e.test.js\"",
     "start": "node server.js"
   },
   "keywords": [],
@@ -22,7 +24,8 @@
   },
   "devDependencies": {
     "chai": "^6.2.2",
-    "mocha": "^11.7.5",
+    "mocha": "^11.7.6",
+    "selenium-webdriver": "^4.44.0",
     "sinon": "^21.0.3"
   }
 }

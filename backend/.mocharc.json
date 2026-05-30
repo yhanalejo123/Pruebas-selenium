@@ -1,0 +1,10 @@
+{
+  "require": [],
+  "spec": [
+    "test/integracion/*.test.js",
+    "test/e2e/*.e2e.test.js"
+  ],
+  "timeout": 10000,
+  "exit": true,
+  "color": true
+}

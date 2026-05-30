@@ -1,0 +1,116 @@
+name: Test Backend & Frontend
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    name: Backend Tests (Node ${{ matrix.node-version }})
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+      fail-fast: false
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+    
+    - name: Install backend dependencies
+      working-directory: backend
+      run: npm ci
+    
+    - name: Run integration tests
+      working-directory: backend
+      run: npm run test:integration
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: backend-test-results-${{ matrix.node-version }}
+        path: backend/test-results/ || true
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    name: Frontend Build (Node ${{ matrix.node-version }})
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+      fail-fast: false
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+    
+    - name: Install frontend dependencies
+      working-directory: frontend
+      run: npm ci
+    
+    - name: Build React app
+      working-directory: frontend
+      run: npm run build
+    
+    - name: Run linting (si existe)
+      working-directory: frontend
+      run: npm run lint --if-present || true
+    
+    - name: Upload build artifacts
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-build-${{ matrix.node-version }}
+        path: frontend/dist/ || true
+
+  security-audit:
+    runs-on: ubuntu-latest
+    name: Security Audit
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+    
+    - name: Backend security audit
+      working-directory: backend
+      run: npm audit --audit-level=moderate || true
+    
+    - name: Frontend security audit
+      working-directory: frontend
+      run: npm audit --audit-level=moderate || true
+
+  status-check:
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build]
+    if: always()
+    name: Overall Status
+    
+    steps:
+    - name: Check if tests passed
+      run: |
+        if [ "${{ needs.backend-tests.result }}" == "failure" ] || [ "${{ needs.frontend-build.result }}" == "failure" ]; then
+          echo "❌ Some tests failed"
+          exit 1
+        else
+          echo "✅ All tests passed"
+        fi
